@@ -42,7 +42,7 @@ HTML · CSS · JavaScript puro (sem dependências externas)
 
 ## Como usar
 
-Basta abrir o arquivo `crypto-wallet-identifier.html` em qualquer navegador moderno ou acessar a versão online, colar o endereço da carteira no campo indicado e clicar em **Pesquisar**.
+Basta acessar a aplicação em https://cryptowalletidentifier.netlify.app/, colar o endereço da carteira no campo indicado e clicar em **Pesquisar**.
 
 ## Autor
 

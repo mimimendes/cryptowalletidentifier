@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crypto Wallet Identifier</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --warn: #d29922;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --radius: 12px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 16px;
+  }
+
+  header { text-align: center; margin-bottom: 36px; }
+  header h1 { font-size: 1.8rem; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
+  header p  { color: var(--muted); margin-top: 6px; font-size: 0.95rem; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    width: 100%;
+    max-width: 640px;
+  }
+
+  label { font-size: 0.85rem; color: var(--muted); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: 'Courier New', monospace;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]::placeholder { color: var(--muted); }
+  input[type="text"]:focus { border-color: var(--accent); }
+
+  button#analyze {
+    background: var(--accent);
+    color: #0d1117;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+  }
+  button#analyze:hover { opacity: 0.85; }
+
+  #result { margin-top: 24px; display: none; }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .coin-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .result-title { font-size: 1.15rem; font-weight: 700; }
+  .result-subtitle { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
+
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+  .badge-blue   { color: var(--accent);  border-color: var(--accent);  background: rgba(88,166,255,0.1); }
+  .badge-green  { color: var(--accent2); border-color: var(--accent2); background: rgba(63,185,80,0.1); }
+  .badge-yellow { color: var(--warn);    border-color: var(--warn);    background: rgba(210,153,34,0.1); }
+  .badge-purple { color: #bc8cff;        border-color: #bc8cff;        background: rgba(188,140,255,0.1); }
+
+  /* legenda das badges */
+  .badge-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .legend-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .info-cell {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .info-cell .key { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  .info-cell .val { font-size: 0.9rem; font-weight: 600; margin-top: 3px; }
+
+  .address-display {
+    margin-top: 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .address-display .key { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  .address-display .val {
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    color: var(--accent);
+    margin-top: 4px;
+    word-break: break-all;
+  }
+
+  .multi-match {
+    margin-top: 10px;
+    font-size: 0.82rem;
+    color: var(--warn);
+    border: 1px solid rgba(210,153,34,0.3);
+    background: rgba(210,153,34,0.07);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+
+  .error-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(248,81,73,0.4);
+    background: rgba(248,81,73,0.08);
+    color: #f85149;
+    font-size: 0.9rem;
+  }
+
+  #history-section { margin-top: 28px; width: 100%; max-width: 640px; }
+  #history-section h2 { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 8px; }
+  #history-list { display: flex; flex-direction: column; gap: 6px; }
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    font-size: 0.83rem;
+  }
+  .history-item:hover { border-color: var(--accent); }
+  .history-item .h-icon { font-size: 16px; }
+  .history-item .h-addr { font-family: monospace; color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .history-item .h-net  { font-weight: 700; color: var(--text); white-space: nowrap; }
+
+  footer {
+    margin-top: 48px;
+    width: 100%;
+    max-width: 640px;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+  }
+  .footer-info { font-size: 0.78rem; color: var(--muted); }
+  .footer-info .footer-name { color: #8b949e; font-weight: 600; }
+  .footer-right { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+  .footer-version { font-size: 0.7rem; color: #484f58; }
+  .footer-linkedin {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.75rem;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .footer-linkedin:hover { border-color: #0a66c2; color: #0a66c2; }
+  .footer-linkedin svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔍 Crypto Wallet Identifier</h1>
+  <p>Identifica a rede de um endereço de carteira de criptomoeda</p>
+</header>
+
+<div class="card">
+  <label for="addr">Endereço da carteira</label>
+  <div class="input-row">
+    <input type="text" id="addr" placeholder="Cole o endereço aqui..." autocomplete="off" spellcheck="false">
+    <button id="analyze" onclick="analyze()">Pesquisar</button>
+  </div>
+  <div id="result"></div>
+</div>
+
+<div id="history-section" style="display:none">
+  <h2>Histórico</h2>
+  <div id="history-list"></div>
+</div>
+
+<footer>
+  <div class="footer-info">
+    <span>Desenvolvido por <span class="footer-name">Urraca Mendes</span></span>
+    <span style="color:#30363d;font-size:0.6rem;letter-spacing:4px">── ✦ ──</span>
+    <span>Analista do Ministério Público do Estado do Rio Grande do Norte</span>
+  </div>
+  <div class="footer-right">
+    <span class="footer-version">v1.0 · 2026</span>
+    <a class="footer-linkedin" href="https://www.linkedin.com/in/urraca-mendes-b07345200/" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+      </svg>
+      LinkedIn
+    </a>
+  </div>
+</footer>
+
+<script>
+// ── Definição das redes ──────────────────────────────────────────────────────
+const NETWORKS = [
+  {
+    name: 'Bitcoin',
+    symbol: 'BTC',
+    icon: '₿',
+    color: '#f7931a',
+    bg: 'rgba(247,147,26,0.15)',
+    type: 'UTXO',
+    algo: 'SHA-256',
+    test: addr => /^(1[a-km-zA-HJ-NP-Z1-9]{25,34}|3[a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[ac-hj-np-z02-9]{6,87})$/.test(addr),
+    detail: addr => addr.startsWith('bc1p') ? 'Taproot (P2TR)' : addr.startsWith('bc1q') ? 'SegWit (P2WPKH/P2WSH)' : addr.startsWith('3') ? 'P2SH' : 'Legacy (P2PKH)',
+    tags: ['UTXO', 'PoW', 'Layer 1'],
+  },
+  {
+    name: 'Ethereum / EVM',
+    symbol: 'ETH',
+    icon: 'Ξ',
+    color: '#627eea',
+    bg: 'rgba(98,126,234,0.15)',
+    type: 'Account',
+    algo: 'Keccak-256',
+    test: addr => /^0x[0-9a-fA-F]{40}$/.test(addr),
+    detail: () => 'Compatível com ETH, BNB Chain, Polygon, Arbitrum, Optimism, Avalanche C-Chain, Base…',
+    tags: ['EVM', 'Multi-rede', 'PoS'],
+  },
+  {
+    name: 'Tron',
+    symbol: 'TRX',
+    icon: 'T',
+    color: '#ff0013',
+    bg: 'rgba(255,0,19,0.12)',
+    type: 'Account',
+    algo: 'Keccak-256',
+    test: addr => /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(addr),
+    detail: () => 'Endereço Tron (Base58Check, prefixo 0x41)',
+    tags: ['Account', 'DPoS', 'Layer 1'],
+  },
+  {
+    name: 'Solana',
+    symbol: 'SOL',
+    icon: '◎',
+    color: '#9945ff',
+    bg: 'rgba(153,69,255,0.12)',
+    type: 'Account',
+    algo: 'Ed25519',
+    test: addr => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr) && !isBtcLike(addr) && !isTrx(addr),
+    detail: () => 'Chave pública Ed25519 em Base58',
+    tags: ['Account', 'PoH+PoS', 'Layer 1'],
+  },
+  {
+    name: 'Ripple (XRP)',
+    symbol: 'XRP',
+    icon: 'X',
+    color: '#346aa9',
+    bg: 'rgba(52,106,169,0.15)',
+    type: 'Account',
+    algo: 'ECDSA / Ed25519',
+    test: addr => /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(addr),
+    detail: () => 'Endereço XRP Ledger (Base58Check, prefixo 0x00)',
+    tags: ['Account', 'XRPL', 'Federated'],
+  },
+  {
+    name: 'Litecoin',
+    symbol: 'LTC',
+    icon: 'Ł',
+    color: '#bfbbbb',
+    bg: 'rgba(191,187,187,0.12)',
+    type: 'UTXO',
+    algo: 'Scrypt',
+    test: addr => /^(L[a-km-zA-HJ-NP-Z1-9]{26,33}|M[a-km-zA-HJ-NP-Z1-9]{26,33}|ltc1[ac-hj-np-z02-9]{6,87})$/.test(addr),
+    detail: addr => addr.startsWith('ltc1') ? 'SegWit (Bech32)' : addr.startsWith('M') ? 'P2SH' : 'Legacy (P2PKH)',
+    tags: ['UTXO', 'PoW', 'Layer 1'],
+  },
+  {
+    name: 'Dogecoin',
+    symbol: 'DOGE',
+    icon: 'Ð',
+    color: '#c3a634',
+    bg: 'rgba(195,166,52,0.13)',
+    type: 'UTXO',
+    algo: 'Scrypt',
+    test: addr => /^D[5-9A-HJ-NP-Za-km-z]{33}$/.test(addr),
+    detail: () => 'Endereço Dogecoin P2PKH',
+    tags: ['UTXO', 'PoW', 'Meme coin'],
+  },
+  {
+    name: 'Cardano',
+    symbol: 'ADA',
+    icon: '₳',
+    color: '#0033ad',
+    bg: 'rgba(0,51,173,0.15)',
+    type: 'UTXO (eUTXO)',
+    algo: 'Ed25519',
+    test: addr => /^(addr1[a-z0-9]+|Ae2[1-9A-HJ-NP-Za-km-z]+|DdzFF[1-9A-HJ-NP-Za-km-z]+|stake1[a-z0-9]+)$/.test(addr),
+    detail: addr => addr.startsWith('addr1') ? 'Shelley (Bech32)' : addr.startsWith('stake1') ? 'Stake address' : 'Byron (Base58)',
+    tags: ['eUTXO', 'PoS (Ouroboros)', 'Layer 1'],
+  },
+  {
+    name: 'Stellar',
+    symbol: 'XLM',
+    icon: '*',
+    color: '#7ac1e4',
+    bg: 'rgba(122,193,228,0.13)',
+    type: 'Account',
+    algo: 'Ed25519',
+    test: addr => /^G[A-Z2-7]{55}$/.test(addr),
+    detail: () => 'Chave pública Stellar (Base32 com checksum)',
+    tags: ['Account', 'SCP', 'Layer 1'],
+  },
+  {
+    name: 'Cosmos (ATOM)',
+    symbol: 'ATOM',
+    icon: '⚛',
+    color: '#6f7390',
+    bg: 'rgba(111,115,144,0.2)',
+    type: 'Account',
+    algo: 'Secp256k1',
+    test: addr => /^cosmos1[a-z0-9]{38}$/.test(addr),
+    detail: () => 'Endereço Cosmos Hub (Bech32)',
+    tags: ['Account', 'Tendermint', 'IBC'],
+  },
+  {
+    name: 'BNB Beacon Chain',
+    symbol: 'BNB',
+    icon: 'B',
+    color: '#f3ba2f',
+    bg: 'rgba(243,186,47,0.13)',
+    type: 'Account',
+    algo: 'Secp256k1',
+    test: addr => /^bnb1[a-z0-9]{38}$/.test(addr),
+    detail: () => 'Endereço BNB Beacon Chain (Bech32)',
+    tags: ['Account', 'DPoS', 'Binance'],
+  },
+  {
+    name: 'Monero',
+    symbol: 'XMR',
+    icon: 'ɱ',
+    color: '#ff6600',
+    bg: 'rgba(255,102,0,0.12)',
+    type: 'UTXO (RingCT)',
+    algo: 'CryptoNight',
+    test: addr => /^4[0-9AB][1-9A-HJ-NP-Za-km-z]{93}$/.test(addr) || /^8[0-9AB][1-9A-HJ-NP-Za-km-z]{93}$/.test(addr),
+    detail: addr => addr.startsWith('8') ? 'Subaddress' : 'Endereço primário Monero',
+    tags: ['Privacy', 'PoW', 'Untraceable'],
+  },
+  {
+    name: 'Hedera',
+    symbol: 'HBAR',
+    icon: 'ℏ',
+    color: '#aaaaaa',
+    bg: 'rgba(150,150,150,0.15)',
+    type: 'Account',
+    algo: 'Ed25519 / ECDSA',
+    test: addr => /^0\.0\.\d+$/.test(addr),
+    detail: () => 'ID de conta Hedera (shard.realm.num)',
+    tags: ['Account', 'Hashgraph', 'DAG'],
+  },
+  {
+    name: 'Avalanche',
+    symbol: 'AVAX',
+    icon: 'A',
+    color: '#e84142',
+    bg: 'rgba(232,65,66,0.13)',
+    type: 'Multi-chain',
+    algo: 'Secp256k1 / Ed25519',
+    test: addr => /^(X-avax1|P-avax1|C-avax1)[a-z0-9]{38}$/.test(addr),
+    detail: addr => addr.startsWith('X-') ? 'X-Chain (UTXO)' : addr.startsWith('P-') ? 'P-Chain (PoS)' : 'C-Chain (EVM)',
+    tags: ['Multi-chain', 'PoS', 'Layer 1'],
+  },
+  {
+    name: 'Algorand',
+    symbol: 'ALGO',
+    icon: 'Ⓐ',
+    color: '#00b4d8',
+    bg: 'rgba(0,180,216,0.12)',
+    type: 'Account',
+    algo: 'Ed25519',
+    test: addr => /^[A-Z2-7]{58}$/.test(addr),
+    detail: () => 'Endereço Algorand (Base32 sem prefixo)',
+    tags: ['Account', 'Pure PoS', 'Layer 1'],
+  },
+  {
+    name: 'Bitcoin Cash',
+    symbol: 'BCH',
+    icon: '₿',
+    color: '#8dc351',
+    bg: 'rgba(141,195,81,0.13)',
+    type: 'UTXO',
+    algo: 'SHA-256',
+    test: addr => /^(bitcoincash:)?[qp][a-z0-9]{41}$/.test(addr) || /^(bitcoincash:)?[QP][A-Z0-9]{41}$/.test(addr),
+    detail: () => 'CashAddr (Bitcoin Cash)',
+    tags: ['UTXO', 'PoW', 'BCH Fork'],
+  },
+  {
+    name: 'Near Protocol',
+    symbol: 'NEAR',
+    icon: 'N',
+    color: '#00c1de',
+    bg: 'rgba(0,193,222,0.12)',
+    type: 'Account',
+    algo: 'Ed25519',
+    test: addr => /^[a-z0-9_\-]{2,64}\.near$/.test(addr) || /^[0-9a-f]{64}$/.test(addr),
+    detail: addr => addr.endsWith('.near') ? 'Named account (.near)' : 'Implicit account (hex)',
+    tags: ['Account', 'PoS', 'Sharded'],
+  },
+];
+
+// helpers
+function isBtcLike(addr) {
+  return /^(1|3|bc1|L|M|ltc1|D[5-9])/.test(addr);
+}
+function isTrx(addr) { return /^T/.test(addr) && addr.length === 34; }
+
+// ── Análise ──────────────────────────────────────────────────────────────────
+const history = [];
+
+function analyze() {
+  const raw = document.getElementById('addr').value.trim();
+  const res = document.getElementById('result');
+  res.style.display = 'block';
+
+  if (!raw) {
+    res.innerHTML = `<div class="error-box">⚠️ Digite um endereço para analisar.</div>`;
+    return;
+  }
+
+  const matches = NETWORKS.filter(n => n.test(raw));
+
+  if (matches.length === 0) {
+    res.innerHTML = `<div class="error-box">❌ Endereço não reconhecido. Verifique se está completo e sem espaços.</div>`;
+    return;
+  }
+
+  const primary = matches[0];
+  const detail  = primary.detail(raw);
+
+  let html = `
+    <div class="result-header">
+      <div class="coin-icon" style="background:${primary.bg};color:${primary.color}">${primary.icon}</div>
+      <div>
+        <div class="result-title" style="color:${primary.color}">${primary.name} <span style="color:var(--muted);font-size:0.9rem">(${primary.symbol})</span></div>
+        <div class="result-subtitle">${detail}</div>
+      </div>
+    </div>
+
+    <div class="badges">
+      ${primary.tags.map(t => `<span class="badge badge-blue">${t}</span>`).join('')}
+      <span class="badge badge-green">${primary.type}</span>
+      <span class="badge badge-purple">${primary.algo}</span>
+    </div>
+
+    <div class="badge-legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#58a6ff"></div>
+        <span><strong style="color:var(--text)">Azul</strong> — categoria / protocolo</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#3fb950"></div>
+        <span><strong style="color:var(--text)">Verde</strong> — modelo de endereço</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#bc8cff"></div>
+        <span><strong style="color:var(--text)">Roxo</strong> — algoritmo criptográfico</span>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-cell"><div class="key">Rede</div><div class="val">${primary.name}</div></div>
+      <div class="info-cell"><div class="key">Símbolo</div><div class="val">${primary.symbol}</div></div>
+      <div class="info-cell"><div class="key">Tipo de endereço</div><div class="val">${primary.type}</div></div>
+      <div class="info-cell"><div class="key">Algoritmo</div><div class="val">${primary.algo}</div></div>
+    </div>
+
+    <div class="address-display">
+      <div class="key">Endereço analisado</div>
+      <div class="val">${escHtml(raw)}</div>
+    </div>
+  `;
+
+  if (matches.length > 1) {
+    const others = matches.slice(1).map(n => n.name).join(', ');
+    html += `<div class="multi-match">⚠️ O endereço também é válido para: <strong>${others}</strong>. O formato EVM é compartilhado por diversas redes (ETH, BSC, Polygon, etc.).</div>`;
+  }
+
+  res.innerHTML = html;
+
+  // histórico — remove duplicata antes de inserir no topo
+  const dupIdx = history.findIndex(h => h.addr === raw);
+  if (dupIdx !== -1) history.splice(dupIdx, 1);
+  history.unshift({ addr: raw, net: primary.name, icon: primary.icon, color: primary.color });
+  if (history.length > 8) history.pop();
+  renderHistory();
+
+  // limpa o campo após análise bem-sucedida
+  document.getElementById('addr').value = '';
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderHistory() {
+  const sec  = document.getElementById('history-section');
+  const list = document.getElementById('history-list');
+  if (!history.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  list.innerHTML = history.map((h,i) => `
+    <div class="history-item" onclick="loadHistory(${i})">
+      <span class="h-icon">${h.icon}</span>
+      <span class="h-addr">${escHtml(h.addr)}</span>
+      <span class="h-net" style="color:${h.color}">${h.net}</span>
+    </div>
+  `).join('');
+}
+
+function loadHistory(i) {
+  document.getElementById('addr').value = history[i].addr;
+  analyze();
+}
+
+// Enter key
+document.getElementById('addr').addEventListener('keydown', e => {
+  if (e.key === 'Enter') analyze();
+});
+</script>
+</body>
+</html>

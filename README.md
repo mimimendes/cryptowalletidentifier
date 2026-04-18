@@ -3,10 +3,7 @@
 Ferramenta web para identificação de redes blockchain a partir de endereços de carteiras de criptomoedas.
 
 ## Sobre
-
 O **Crypto Wallet Identifier** permite colar qualquer endereço de carteira e obter instantaneamente a rede blockchain correspondente, com informações técnicas detalhadas sobre o tipo de endereço, modelo de contabilidade e algoritmo criptográfico utilizado.
-
-A aplicação é executada inteiramente no navegador, sem envio de dados a servidores externos.
 
 ## Redes suportadas
 
